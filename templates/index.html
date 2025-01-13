@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmotionAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5; /* Color de fondo más neutro */
+            color: #333; /* Color de texto oscuro para mayor contraste */
+            margin: 0;
+            padding: 0;
+        }
+
+        .card {
+            background-color: #ffffff; /* Blanco para las tarjetas */
+            border: 1px solid #ddd; /* Borde sutil gris */
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave */
+        }
+
+        h1, h2 {
+            color: #4A90E2; /* Azul suave */
+            font-weight: bold;
+        }
+
+        p {
+            color: #555; /* Gris oscuro para el texto */
+        }
+
+        .emotion-detected {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #E94E77; /* Color de emoción en rosa suave */
+        }
+
+        .btn-custom {
+            background-color: #4A90E2; /* Azul suave */
+            color: #fff;
+            padding: 12px 24px;
+            border: 1px solid #4A90E2; /* Borde azul */
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-custom:hover {
+            background-color: #357ABD; /* Azul más oscuro */
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0; /* Gris claro para el fondo */
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid #ddd; /* Borde gris */
+        }
+
+        .progress {
+            height: 10px;
+            background-color: #4A90E2; /* Azul suave */
+            width: 0%;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4A90E2; /* Azul suave */
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            width: 40px;
+            height: 40px;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        #previewContainer img {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            max-width: 100%;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 40px 0;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .max-w-4xl {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .flex {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        .w-1/2 {
+            width: 48%;
+        }
+
+        .px-4 {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .mt-6 {
+            margin-top: 24px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="text-center">
+            <h1>EmotionAI</h1>
+            <p>¡Analiza emociones en tus imágenes de forma rápida y precisa!</p>
+        </div>
+
+        <div class="max-w-4xl mx-auto mt-12">
+            <div class="flex">
+                <div class="w-full w-1/2 px-4">
+                    <div class="card">
+                        <h2>Sube tu imagen para analizar emociones</h2>
+                        <form id="uploadForm">
+                            <div class="flex items-center justify-center w-full">
+                                <label class="flex flex-col items-center justify-center w-full h-48 border-4 border-dashed border-gray-400 cursor-pointer">
+                                    <div class="text-center text-gray-400" id="previewContainer">
+                                        <p>Arrastra o selecciona una imagen</p>
+                                    </div>
+                                    <input type="file" class="opacity-0" name="file" accept=".jpg,.jpeg,.png" id="fileInput" />
+                                </label>
+                            </div>
+                            <button type="submit" class="btn-custom w-full">
+                                Analizar Emoción
+                            </button>
+                        </form>
+                        <div id="uploadMessage" class="hidden">Imagen subida correctamente.</div>
+                        <div id="progressSection" class="hidden mt-6">
+                            <h2>Progreso del Análisis</h2>
+                            <div class="progress-container">
+                                <div id="progress" class="progress"></div>
+                            </div>
+                        </div>
+                        <div id="loading" class="hidden mt-6">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        <div id="error" class="hidden mt-6 error-message"></div>
+                    </div>
+                </div>
+
+                <div class="w-full w-1/2 px-4">
+                    <div class="card">
+                        <h2>Resultados de la Detección</h2>
+                        <div id="detectionComplete" class="hidden text-green-500 font-bold">
+                            Detección Completa
+                        </div>
+                        <div id="results" class="hidden">
+                            <div>
+                                <h4>Resultados:</h4>
+                                <div>
+                                    <img id="keypointImage" alt="Puntos clave del rostro">
+                                    <img id="resultImageSecondary" alt="Transformaciones de la Imagen">
+                                </div>
+                            </div>
+                            <div id="emotionLabel" class="emotion-detected hidden"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $('#fileInput').on('change', function (e) {
+                var file = e.target.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#previewContainer').html('<img src="' + e.target.result + '" alt="Vista previa">');
+                        $('#uploadMessage').removeClass('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            $('#uploadForm').on('submit', function (e) {
+                e.preventDefault();
+
+                var formData = new FormData(this);
+                $('#loading').removeClass('hidden');
+                $('#progressSection').removeClass('hidden');
+                $('#progress').css('width', '0%');
+                $('#uploadMessage').addClass('hidden');
+
+                $.ajax({
+                    url: '/analyze',
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    xhr: function () {
+                        var xhr = new window.XMLHttpRequest();
+                        xhr.upload.addEventListener("progress", function (evt) {
+                            if (evt.lengthComputable) {
+                                var percentComplete = (evt.loaded / evt.total) * 100;
+                                $('#progress').css('width', percentComplete + '%');
+                            }
+                        }, false);
+                        return xhr;
+                    },
+                    success: function (response) {
+                        $('#loading').addClass('hidden');
+                        $('#detectionComplete').removeClass('hidden');
+                        $('#results').removeClass('hidden');
+                        $('#keypointImage').attr('src', 'data:image/png;base64,' + response.keypoint_image);
+                        $('#resultImageSecondary').attr('src', 'data:image/png;base64,' + response.transformations_image);
+                        $('#progress').css('width', '100%');
+
+                        if (response.emotion) {
+                            $('#emotionLabel').text('Emoción Detectada: ' + response.emotion).removeClass('hidden');
+                        }
+                    },
+                    error: function (xhr) {
+                        $('#loading').addClass('hidden');
+                        $('#error').text(xhr.responseJSON.error).removeClass('hidden');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
